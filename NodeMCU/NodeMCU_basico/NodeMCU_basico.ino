@@ -2,6 +2,8 @@
 #include <MFRC522.h>
 #include <ESP8266WiFi.h> // para el wifi
 
+/////////////////buzzer///////////////
+#define pinBuzzer D3
 
 /////////////////  RFID  ////////////////////////
 #define SS_PIN  D4   //Pin D4 para el SS (SDA) del RC522
@@ -15,8 +17,9 @@ byte comparacion=0;
 byte suma=0;
 char lector='A';
 ////////////////////   wifi   ///////////////////////////////
-const char* ssid     = "GISAI NET";  //MOVISTAR_C81A es el de casa
-const char* password = "XXXXX"; 
+
+const char* ssid     = "GISAI NET";  // es el de casa  GISAI NET
+const char* password = "XXXX"; //  GisaiDitNet17
 
 const char* host = "192.168.1.9";
 
@@ -28,6 +31,7 @@ void setup() {
   Serial.println("Lectura del UID");
 
   //////////// wifi////////
+  
   Serial.println();
   Serial.println();
   Serial.print("Conectado a: ");
@@ -43,7 +47,7 @@ void setup() {
   Serial.println("Conectado al wifi");
   Serial.println("Direccion IP: ");
   Serial.println(WiFi.localIP());
-  
+ 
 }
 
 
@@ -69,9 +73,14 @@ void loop() {
                   mfrc522.PICC_HaltA();//finaliza lectura 
             }
             Serial.println();
-            entrante=1; 
+            entrante=1; // indico que ha entrado una tarjeta nueva
+            
+            
   }
   if(entrante){
+    tone(pinBuzzer, 600);
+    delay(250);
+    noTone(pinBuzzer);
     entrante=0;
     for (int j=0; j<4;j++){
       if(nueva[j]==base[j]){
@@ -79,6 +88,7 @@ void loop() {
         }
       }
       if (suma!=4) {
+        Serial.println("nueva");
         comparacion=1;
         for(int p=0;p<4;p++){
           base[p]=nueva[p];
@@ -87,53 +97,17 @@ void loop() {
      suma=0;     
   }
 
+
    if (comparacion){
     comparacion=0;
     Serial.print("Conectado a: ");
     Serial.println(host);
     WiFiClient client;      //creo el cliente
-    const int httpPort = 3000; // antes 80 y he cambiado l 3000 a ver si va
+    const int httpPort = 3000; // antes 80 y ahora 3000 a ver si va
        if (!client.connect(host, httpPort)) { //si no me conecto
         Serial.println("conexion fallida");
         return;     //empiezo el loop de nuevo
       }
-      
-   /* /// creacion de la url///
-      String url = "/?ID=";
-      url += nueva[0];
-      url += ":";
-      url += nueva[1];
-      url += ":";
-      url += nueva[2];
-      url += ":";
-      url += nueva[3];
-      url+= "&lector=";
-      url += lector;
-      
-      Serial.print("URL: ");
-      Serial.println(url);
-
-      /////////envio al servidor con get/////////// 
-      client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" +
-               "Connection: close\r\n\r\n"); // terminar la petecion 
-      unsigned long timeout = millis();
-        while (client.available() == 0) {
-          if (millis() - timeout > 5000) {
-            Serial.println(">>> Client Timeout !");
-            client.stop();
-            return;
-          }
-        }
-      
-        // Read all the lines of the reply from server and print them to Serial
-        while (client.available()) { //si hay datos que entran
-          String line = client.readStringUntil('\r');
-          Serial.print(line);
-        }
-        Serial.println("");
-
-*/
         /////////envio al servidor con post/////////// 
         /// creacion de la url///
           String url = "/";  
@@ -172,7 +146,7 @@ void loop() {
           String line = client.readStringUntil('\r');
           Serial.print(line);
         }
-        Serial.println("");
+        Serial.println(""); 
    }
 }
 
